@@ -297,3 +297,42 @@
         (ok true)
     )
 )
+
+;; Resumes the contract, re-enabling certain functions
+(define-public (resume-contract)
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (var-set contract-paused false)
+        (ok true)
+    )
+)
+
+;; read only functions
+
+;; Returns the contract owner
+(define-read-only (get-contract-owner)
+    (ok CONTRACT-OWNER)
+)
+
+;; Returns the current STX pool balance
+(define-read-only (get-stx-pool)
+    (ok (var-get stx-pool))
+)
+
+;; Returns the current proposal count
+(define-read-only (get-proposal-count)
+    (ok (var-get proposal-count))
+)
+
+;; private functions
+
+;; Retrieves tier information based on the stake amount
+(define-private (get-tier-info (stake-amount uint))
+    (if (>= stake-amount u10000000)
+        {tier-level: u3, reward-multiplier: u200}
+        (if (>= stake-amount u5000000)
+            {tier-level: u2, reward-multiplier: u150}
+            {tier-level: u1, reward-multiplier: u100}
+        )
+    )
+)
