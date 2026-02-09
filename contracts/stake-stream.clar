@@ -307,6 +307,32 @@
     )
 )
 
+;; Allows users to claim accumulated rewards
+(define-public (claim-rewards)
+  (let
+      (
+          (staking-position (unwrap! (map-get? StakingPositions tx-sender) ERR-NO-STAKE))
+          (user-position (unwrap! (map-get? UserPositions tx-sender) ERR-NOT-AUTHORIZED))
+      )
+      (let (
+            (blocks-staked (- stacks-block-height (get last-claim staking-position)))
+            (rewards (calculate-rewards tx-sender blocks-staked))
+          )
+          ;; Update staking position
+          (map-set StakingPositions
+              tx-sender
+              (merge staking-position { last-claim: stacks-block-height, accumulated-rewards: (+ (get accumulated-rewards staking-position) rewards) })
+          )
+
+          ;; Transfer ANALYTICS-TOKEN as reward (or STX)
+          (try! (ft-mint? ANALYTICS-TOKEN rewards tx-sender))
+
+          (ok rewards)
+      )
+  )
+)
+
+
 ;; read only functions
 
 ;; Returns the contract owner
